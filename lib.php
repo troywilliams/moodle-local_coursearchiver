@@ -91,7 +91,7 @@ class course_archiver {
      */    
     public static function run($timeoverride=null) {
         global $DB;
-        
+
         $total = 0;
         $completed = 0;
         $state = course_archiver::get_state();
@@ -112,34 +112,6 @@ class course_archiver {
         $timenow  = time();
         mtrace("Course archiver launched at " . date('r', $timenow));
 
-        // This block removes courses from queue table that have been moved out of archive category
-        $sql = "SELECT c.id, c.shortname
-                  FROM {course} c
-             LEFT JOIN {course_archiver} ca
-                    ON ca.courseid = c.id
-                 WHERE c.category != :category
-                   AND ca.id IS NOT NULL";
-        
-        $courses = $DB->get_records_sql($sql, array('category'=>$config->archivecategory));
-        foreach ($courses as $course) {
-            course_archiver::remove_from_queue($course);
-            mtrace('Removing course from queue '.$course->shortname);
-        }
-        
-        // This block adds courses to queue table that have been moved into archive category
-        $sql = "SELECT c.id, shortname
-                  FROM {course} c
-             LEFT JOIN {course_archiver} ca
-                    ON ca.courseid = c.id
-                 WHERE c.category = :category
-                   AND ca.id IS NULL";
-        
-        $courses = $DB->get_records_sql($sql, array('category'=>$config->archivecategory));
-        foreach ($courses as $course) {
-            course_archiver::add_to_queue($course);
-            mtrace('Adding course to queue '.$course->shortname);
-        }
-        
         // Now start the process c.id, c.category, c.shortname, c.visible 
         $sql = "SELECT c.*
                   FROM {course} c
@@ -322,10 +294,6 @@ class course_archiver {
         $config = course_archiver::get_config();
         
         if (empty($config->enabled)){
-            return course_archiver::STATE_DISABLED;
-        }
-        
-        if (empty($config->archivecategory)){
             return course_archiver::STATE_DISABLED;
         }
         

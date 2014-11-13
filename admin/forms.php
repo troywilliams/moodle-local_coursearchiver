@@ -36,13 +36,7 @@ class coursearchiver_settings_form extends moodleform {
         $mform->addElement('text', 'mbzstoredirectory', get_string('saveto'), array('size'=>'100'));
         $mform->setDefault('mbzstoredirectory', $CFG->dataroot.'/coursearchiver');
         $mform->setType('mbzstoredirectory', PARAM_RAW);
-        //$mform->addRule('mbzstoredirectory', get_string('required'), 'required', null, 'client');
-        
-        $displaylist = coursecat::make_categories_list(array('moodle/category:manage'));
-        $displaylist = array(0 => get_string('select') . '...') + $displaylist;
-        $mform->addElement('select', 'archivecategory', get_string('archivecategory', 'local_coursearchiver'), $displaylist);
-        $mform->addHelpButton('archivecategory', 'archivecategory', 'local_coursearchiver');
-        
+
         $graceperiodoptions = array(0 => get_string('none'),
                                     7 => get_string('numdays', '', 7),
                                     30 => get_string('numdays', '', 30),

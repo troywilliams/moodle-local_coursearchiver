@@ -32,7 +32,6 @@ echo $OUTPUT->header();
 if ($data) {
     set_config('enabled', $data->enabled, 'local_coursearchiver');
     set_config('mbzstoredirectory', $data->mbzstoredirectory, 'local_coursearchiver');
-    set_config('archivecategory', $data->archivecategory, 'local_coursearchiver');
     set_config('graceperiod', $data->graceperiod * 60 * 60 * 24, 'local_coursearchiver');
     set_config('processingtime', $data->processingtime, 'local_coursearchiver');
     echo $OUTPUT->notification(get_string('changessaved'), 'notifysuccess');

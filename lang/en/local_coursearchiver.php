@@ -1,4 +1,6 @@
 <?php
+$string['browse'] = 'Browse';
+$string['coursearchivertask'] = 'Course archiver run task';
 $string['pluginname'] = 'Course Archiver';
 $string['settings'] = 'Settings';
 $string['disabled'] = 'Disabled';
@@ -12,8 +14,15 @@ $string['graceperiod'] = 'Grace period';
 $string['graceperiod_help'] = 'Period of time after course was queued to wait before starting archive process';
 $string['coursename'] = 'Course name';
 $string['queue'] = 'Queue';
-$string['process'] = 'Process @';
+$string['queued'] = 'Queued';
+$string['search'] = 'Search';
 $string['status'] = 'Status';
 $string['status_ok'] = 'OK';
 $string['status_error'] = 'ERROR';
 $string['cronprocessingtime'] = 'Processing time each cron run';
+$string['shortname'] = 'Course shortname';
+$string['timecreated'] = 'Time created';
+$string['queueselected'] = 'Queue selected';
+$string['dequeueselected'] = 'Dequeue selected';
+$string['noneselected'] = 'None selected';
+$string['recordsfound'] = '{$a} records found';
