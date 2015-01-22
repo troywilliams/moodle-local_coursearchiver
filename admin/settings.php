@@ -27,7 +27,7 @@ require_once($CFG->dirroot . '/local/coursearchiver/admin/forms.php');
 admin_externalpage_setup('coursearchiver-settings');
 
 $form = new coursearchiver_settings_form();
-$data = $form->get_data();
+$data = $form->get_submitted_data();
 echo $OUTPUT->header();
 if ($data) {
     set_config('enabled', $data->enabled, 'local_coursearchiver');
