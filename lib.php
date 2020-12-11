@@ -92,6 +92,7 @@ class course_archiver {
     public static function run($timeoverride=null) {
         global $DB;
 
+        $filestorage = get_file_storage();
         $total = 0;
         $completed = 0;
         $state = course_archiver::get_state();
@@ -136,6 +137,7 @@ class course_archiver {
                 $course = array_shift($courses);
                 $filename = course_archiver::generate_filename($course);
                 $result = course_archiver::backup_course($course, $filename);
+
                 mtrace('Backup course '.$course->shortname. ' to file '.$filename.'... ');
                 if (!$result) {
                     $DB->set_field('course_archiver', 'status', course_archiver::STATUS_ERROR, array('courseid'=>$course->id));
@@ -152,6 +154,7 @@ class course_archiver {
                     continue;
                 } else {
                     $DB->delete_records('course_archiver', array('courseid'=>$course->id));
+                    $filestorage->get_file_system()->cron(); // We use cron in filesystem class as empty_trash() is protected method.
                     $completed++;
                     mtrace('OK');
                 }
