@@ -32,7 +32,7 @@ class course_archiver {
     /** automated archiver are disabled and will not be run */
     const STATE_DISABLED = 1;
     /** automated archiver are all ready running! */
-    const STATE_RUNNING = 2; 
+    const STATE_RUNNING = 2;
     /** success of a stage operation */
     const STATUS_OK = 0;
     /** failure of a stage operation */
@@ -43,29 +43,29 @@ class course_archiver {
 
     /**
      *
-     * @return stdClass $config 
+     * @return stdClass $config
      */
     public static function get_config() {
-        
+
         if (!isset(course_archiver::$config)) {
             course_archiver::$config = get_config('local_coursearchiver');
         }
         return course_archiver::$config;
     }
-    
+
     /**
      *
      * @global moodle_database $DB
      * @param stdClass $course
      * @return stdClass $record
-     * @throws moodle_exception 
+     * @throws moodle_exception
      */
     public static function add_to_queue(stdClass $course) {
-        global $DB;        
-        
+        global $DB;
+
         if ($course->id == SITEID) {
             throw new moodle_exception('site cannot be archived');
-        }  
+        }
         $record = $DB->get_record('course_archiver', array('courseid'=>$course->id));
         if (!empty($record)) {
             throw new moodle_exception('course has already been queued for archival');
@@ -77,18 +77,18 @@ class course_archiver {
         }
         return $record;
     }
-    
+
     public static function remove_from_queue(stdClass $course) {
         global $DB;
-        
+
         return $DB->delete_records('course_archiver', array('courseid'=>$course->id));
     }
-    
+
     /**
      *
      * @global moodle_database $DB
-     * @return boolean 
-     */    
+     * @return boolean
+     */
     public static function run($timeoverride=null) {
         global $DB;
 
@@ -103,7 +103,7 @@ class course_archiver {
             mtrace("Course archiver is already RUNNING. Execution delayed");
             return false;
         }
-        
+
         $config = course_archiver::get_config();
 
         course_archiver::set_state_running(true);
@@ -112,7 +112,7 @@ class course_archiver {
         $timenow  = time();
         mtrace("Course archiver launched at " . date('r', $timenow));
 
-        // Now start the process c.id, c.category, c.shortname, c.visible 
+        // Now start the process c.id, c.category, c.shortname, c.visible
         $sql = "SELECT c.*
                   FROM {course} c
                   JOIN {course_archiver} ca
@@ -156,7 +156,7 @@ class course_archiver {
                     mtrace('OK');
                 }
            }
-        
+
         }
 
         fix_course_sortorder();
@@ -170,8 +170,8 @@ class course_archiver {
         mtrace('Processed: '.$processed);
         mtrace('Completed: '.$completed);
         mtrace('Execution took '.$difftime.' seconds');
-        
-        
+
+
         course_archiver::set_state_running(false);
         return true;
     }
@@ -189,37 +189,41 @@ class course_archiver {
         $outcome = false;
         $config = course_archiver::get_config();
         $admin = get_admin();
-        
+
         $bc = new backup_controller(backup::TYPE_1COURSE, $course->id, backup::FORMAT_MOODLE, backup::INTERACTIVE_NO, course_archiver::MODE_ARCHIVE, $admin->id);
         try {
-            
+
             if (!is_writable($config->mbzstoredirectory)) {
                 throw new moodle_exception('mbz store directory not writable');
             }
-            // Everything we need
-            $settings = array(
+            $settings = [
                 'users' => true,
                 'role_assignments' => true,
                 'activities' => true,
                 'blocks' => true,
                 'filters' => true,
                 'comments' => true,
-                'completion_information' => true,
+                'badges' => true,
+                'calendarevents' => true,
+                'userscompletion' => true,
                 'logs' => true,
-                'histories' => true
-            );
+                'grade_histories' => true,
+                'questionbank' => true,
+                'groups' => true,
+                'competencies' => true
+            ];
             foreach ($settings as $setting => $value) {
                 if ($bc->get_plan()->setting_exists($setting)) {
                     $bc->get_plan()->get_setting($setting)->set_value($value);
                 }
             }
-            
+
             $bc->set_status(backup::STATUS_AWAITING);
 
             $bc->execute_plan();
-            
+
             $results = $bc->get_results();
-            
+
             $file = $results['backup_destination']; // may be empty if file already moved to target location
             if ($file) {
                 $outcome = $file->copy_content_to($config->mbzstoredirectory.'/'.$filename);
@@ -227,7 +231,7 @@ class course_archiver {
                     $file->delete();
                 }
             }
-        } catch (Exception $e) {   
+        } catch (Exception $e) {
             $bc->log('backup_auto_failed_on_course', backup::LOG_ERROR, $course->shortname); // Log error header.
             $bc->log('Exception: ' . $e->errorcode, backup::LOG_ERROR, $e->a); // Log original exception problem.
             $outcome = false;
@@ -244,8 +248,12 @@ class course_archiver {
     }
 
     public static function delete_course(stdClass $course) {
+        global $CFG;
         $outcome = true;
         try {
+
+            // Trick the recycle bin. See function tool_recyclebin_pre_course_delete().
+            $course->deletesource = 'restore';
 
             delete_course($course);
 
@@ -261,7 +269,7 @@ class course_archiver {
      * @global moodle_database $DB
      * @param stdClass $course
      * @return type
-     * @throws coding_exception 
+     * @throws coding_exception
      */
     public static function generate_filename(stdClass $course) {
         global $DB;
@@ -274,11 +282,11 @@ class course_archiver {
         $context   = context_course::instance($course->id);
         $shortname = format_string($shortname, true, array('context'=>$context));
         $shortname = str_replace(' ', '_', $shortname);
-        $shortname = textlib::strtolower(trim(clean_filename($shortname), '_'));
+        $shortname = core_text::strtolower(trim(clean_filename($shortname), '_'));
         // Calculate date
         $backupdateformat = str_replace(' ', '_', get_string('backupnameformat', 'langconfig'));
         $date = userdate(time(), $backupdateformat, 99, false);
-        $date = textlib::strtolower(trim(clean_filename($date), '_'));
+        $date = core_text::strtolower(trim(clean_filename($date), '_'));
 
         return $shortname . '-' . $date . '.mbz';
     }
@@ -292,15 +300,15 @@ class course_archiver {
         global $DB;
 
         $config = course_archiver::get_config();
-        
+
         if (empty($config->enabled)){
             return course_archiver::STATE_DISABLED;
         }
-        
+
         if (!is_dir($config->mbzstoredirectory)){
             return course_archiver::STATE_DISABLED;
         }
-        
+
         if (!empty($config->isrunning)) {
             // Detect if the isrunning semaphore is a valid one
             // by looking for recent activity in the backup_controllers table

@@ -20,6 +20,7 @@ $string['status'] = 'Status';
 $string['status_ok'] = 'OK';
 $string['status_error'] = 'ERROR';
 $string['cronprocessingtime'] = 'Processing time each cron run';
+$string['fullname'] = 'Course fullname';
 $string['shortname'] = 'Course shortname';
 $string['timecreated'] = 'Time created';
 $string['queueselected'] = 'Queue selected';
