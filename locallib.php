@@ -23,19 +23,29 @@ function coursearchiver_get_configured_filters() {
             'type' => 'text',
             'fieldprefix' => 'c',
             'elementname' => '',
-            'elementlabel' => get_string('shortname', 'local_coursearchiver')),
+            'elementlabel' => get_string('shortname', 'local_coursearchiver')
+        ),
+
+        'fullname' => array(
+            'type' => 'text',
+            'fieldprefix' => 'c',
+            'elementname' => '',
+            'elementlabel' => get_string('fullname', 'local_coursearchiver')
+        ),
 
         'timecreated' => array(
             'type' => 'date',
             'fieldprefix' => 'c',
             'elementname' => '',
-            'elementlabel' => get_string('timecreated', 'local_coursearchiver')),
+            'elementlabel' => get_string('timecreated', 'local_coursearchiver')
+        ),
 
         'timequeued' => array(
             'type' => 'checkbox',
             'fieldprefix' => 'ca',
             'elementname' => 'queued',
-            'elementlabel' => get_string('queued', 'local_coursearchiver')),
+            'elementlabel' => get_string('queued', 'local_coursearchiver')
+        )
 
     );
 }
@@ -58,23 +68,23 @@ function coursearchiver_get_enabled_filters() {
 
 function coursearchiver_cache_empty() {
         global $SESSION;
-        
+
         if (isset($SESSION->coursearchiver_filters) and is_array($SESSION->coursearchiver_filters)) {
             foreach($SESSION->coursearchiver_filters as $filter) {
                 if (is_array($filter)) {
                     return false;
-                } 
+                }
             }
         }
         return true;
     }
-    
+
 function coursearchiver_cache_get($field) {
     global $SESSION;
     if (!isset($SESSION->coursearchiver_filters[$field])) {
         $SESSION->coursearchiver_filters[$field] = false;
         return false;
-    }    
+    }
     return $SESSION->coursearchiver_filters[$field];
 }
 
