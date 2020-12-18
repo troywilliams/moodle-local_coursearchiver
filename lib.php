@@ -147,14 +147,13 @@ class course_archiver {
                     mtrace('OK');
                 }
                 mtrace('Deleting course '.$course->shortname.'... ');
-                $result = course_archiver::delete_course($course);
+                $result = course_archiver::delete_course($course, false);
                 if (!$result) {
                     $DB->set_field('course_archiver', 'status', course_archiver::STATUS_ERROR, array('courseid'=>$course->id));
                     mtrace('ERROR');
                     continue;
                 } else {
                     $DB->delete_records('course_archiver', array('courseid'=>$course->id));
-                    $filestorage->get_file_system()->cron(); // We use cron in filesystem class as empty_trash() is protected method.
                     $completed++;
                     mtrace('OK');
                 }
@@ -192,6 +191,7 @@ class course_archiver {
         $outcome = false;
         $config = course_archiver::get_config();
         $admin = get_admin();
+        $filestorage = get_file_storage();
 
         $bc = new backup_controller(backup::TYPE_1COURSE, $course->id, backup::FORMAT_MOODLE, backup::INTERACTIVE_NO, course_archiver::MODE_ARCHIVE, $admin->id);
         try {
@@ -226,12 +226,28 @@ class course_archiver {
             $bc->execute_plan();
 
             $results = $bc->get_results();
-
-            $file = $results['backup_destination']; // may be empty if file already moved to target location
+            /** @var stored_file $file $file */
+            $file = $results['backup_destination']; // May be empty if file already moved to target location.
             if ($file) {
                 $outcome = $file->copy_content_to($config->mbzstoredirectory.'/'.$filename);
                 if ($outcome) {
+                    // Remove the backup file.
                     $file->delete();
+                    // Remove from trash, unfortunately to public methods available.
+                    if (isset($CFG->trashdir)) {
+                        $trashdir = $CFG->trashdir;
+                    } else {
+                        $trashdir = $CFG->dataroot . '/trashdir';
+                    }
+                    $contenthash = $file->get_contenthash();
+                    $l1 = $contenthash[0] . $contenthash[1];
+                    $l2 = $contenthash[2] . $contenthash[3];
+                    $tempfiledir = "$trashdir/$l1/$l2";
+                    $tempfile = "$tempfiledir/$contenthash";
+                    if (file_exists($tempfile)) {
+                        unlink($tempfile);
+                        fulldelete($tempfiledir);
+                    }
                 }
             }
         } catch (Exception $e) {
@@ -250,15 +266,14 @@ class course_archiver {
         return $outcome;
     }
 
-    public static function delete_course(stdClass $course) {
-        global $CFG;
+    public static function delete_course(stdClass $course, bool $showfeedback = true) {
         $outcome = true;
         try {
 
             // Trick the recycle bin. See function tool_recyclebin_pre_course_delete().
             $course->deletesource = 'restore';
 
-            delete_course($course);
+            delete_course($course, $showfeedback);
 
         } catch (Exception $e) {
             mtrace('Exception: ' . $e->errorcode);
